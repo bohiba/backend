@@ -1,56 +1,76 @@
+const UserModel = require('../models/user_model');
+const NodeMailer = require('nodemailer');
 
-const UserModel = require("../models/user_models");
-const UserRoles = require("../utils/roles");
 
-async function generateUniqueID({ roles }) {
+class AuthServices {
 
-    return new Promise(async (resolve, reject) => {
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let uniqueID = '';
-        let length = 0;
-        switch (roles) {
-            case  UserRoles.superAdmin:
-                length = 8;
-                break;
-            case UserRoles.admin:
-                length = 8;
-                break;
-            case UserRoles.contentAdmin:
-                length = 8;
-                break;
-            case UserRoles.contentWriter:
-                length = 8;
-                break;        
-            case UserRoles.tipperOwner:
-                length =  6   
-                break;
-            case UserRoles.driver:
-                length =  6   
-                break;    
-            default:
-                break;
-        }
-      
-        for (let i = 0; i < length; i++) {
-            const randomIndex = Math.floor(Math.random() * characters.length);
-            uniqueID += characters.charAt(randomIndex);
-        }
+  static async verifyEmailServices() {
 
-        try {
-            const existingUserID = await UserModel.findOne({ uniqueID });
-            if (existingUserID) {
-                resolve(await generateUniqueID({ roles }),
-            );
-            } else {
-                resolve(uniqueID);
-            }
-        } catch (error) {
-            reject(error);
-        }
+  }
+
+  static async generateUniqueID({ length }) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let uniqueID;
+    let isUnique = false;
+
+    while (!isUnique) {
+      uniqueID = Array.from({ length }, () =>
+        characters.charAt(Math.floor(Math.random() * characters.length))
+      ).join('');
+      const existingUserID = await UserModel.findOne({ uniqueID });
+      isUnique = !existingUserID; // If no match, it's unique
+    }
+    return uniqueID;
+  }
+
+  static async generateOTP() {
+    const digits = "1234567890";
+    let otp = "";
+    let isUnique = false;
+    do {
+      otp = Array.from({ length: 6}, () =>
+        digits.charAt(Math.floor(Math.random() * digits.length))
+      ).join('');
+      const existingUserID = await UserModel.findOne({ otp });
+      isUnique = !existingUserID; // If no match, it's unique
+    } while (!isUnique);
+    return otp;
+  }
+
+  static async sendEmail({ to, subject, html }) {
+    const transporter = NodeMailer.createTransport({
+      service: 'Gmail',
+      auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+      }
     });
+  
+    const mailOptions = {
+      from: '"Bohiba Official" <bohibaofficial@gmail.com>',
+      to,
+      subject,
+      html
+    };
+  
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      return  {
+        success: true,
+        statusCode: 201,
+        message: "Success", 
+        
+      }
+    } catch (error) {
+      return {
+        success: false,
+        statusCode: 500, 
+        error: error.message,
+        message: `Error while sending email`, 
+      }
+    }
+  }
 }
-
-module.exports = {
-    generateUniqueID,
-}
-
+  
+  module.exports = AuthServices;
+  

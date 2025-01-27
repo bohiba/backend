@@ -1,10 +1,12 @@
 const express  = require(`express`);
-const UserRouter = require(`./routes/user_router`);
-const session = require(`express-session`);
-const bodyParser = require(`body-parser`);
 const multer = require(`multer`);
-const VehicleRouter = require("./routes/vehicle_router");
+const session = require(`express-session`);
 const upload = multer();
+
+const bodyParser = require(`body-parser`);
+const AuthRouter = require("./routes/auth_route");
+const MinesRouter = require("./routes/mines_route");
+const UserRouter = require("./routes/user_route");
 
 const app = express();
 app.use(
@@ -15,6 +17,7 @@ app.use(
         cookie: {secure: false}
     })
 );
+
 // for parsing Content-Type = application/json
 app.use(bodyParser.json());
 // for parsing Content-Type = application/xwww-form-urlencoded
@@ -22,8 +25,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // for parsing multipart/form-data
 app.use(upload.array());
 
-app.use('/', UserRouter);
-
-app.use('/api/v1/', VehicleRouter);
+app.use("/api/v1/", AuthRouter);
+app.use("/api/v1/", MinesRouter);
+app.use(`/api/v1/`, UserRouter);
 
 module.exports = app;

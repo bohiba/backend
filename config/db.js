@@ -1,22 +1,22 @@
 /* To start run the project use [npm run dev] */
 
 const mongoose = require('mongoose');
-const url = process.env.MONGO_URL;
+const url = `${process.env.MONGO_URL}`;
 const db = mongoose.createConnection(url, {
   serverSelectionTimeoutMS: 1000,
   useNewUrlParser: true,
   useUnifiedTopology: true,
 }).on('connected', () => 
-  console.log('MongoDB connected'),
+  console.log("\n===========\n| MongoDB connected |\n===========\n"),
 ).on('open', ()=> 
-  console.log("MongoDB opened"),
+  console.log("\n===========\n| MongoDB opened |\n===========\n"),
 ).on('disconnected', () =>
-  console.log('disconnected'),
+  console.log("\n===========\n| Disconnected |\n===========\n"),
 ).on('reconnected', () => 
-  console.log('reconnected'),
+  console.log("\n===========\n| Reconnected |\n===========\n"),
 ).on('disconnecting', () => 
-  console.log('disconnecting'),
+  console.log("\n===========\n| Disconnecting |\n===========\n"),
 ).on('error', ()=> 
-  console.log("Server error")
+  console.log("\n===========\n| Server error |\n===========\n")
 );
 module.exports = db;

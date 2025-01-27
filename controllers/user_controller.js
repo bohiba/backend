@@ -1,97 +1,93 @@
+const ResponseHandler = require(`../services/response_handler`);
+const  UserModel  = require(`../models/user_model`);
+const UserRole  = require(`../utils/roles`);
 
-const UserMiddleware = require("../middleware/user_middleware");
-const { logger } = require("../utils/logger");
+class  UserController {
+    static async updateRole( req, res, next ) {
+       try {
+        const { user_id, role } = req.body;
+        if (!user_id) {
+            return ResponseHandler.send(res, {
+                success: false,
+                statusCode: 404,
+                message: `user_id key is required field`,  
+            });
+        } 
+        
+        if (!role) {
+            return ResponseHandler.send(res, {
+                success: false,
+                statusCode: 404,
+                message: `role key is required field`, 
+            });
+        }
 
-class UserController {
-  static async addNewUser(req, res) {
-    const { email, mobile_number, password, roles, createdBy } = req.body;
-    const token = req.headers.authorization;
-    var response = await UserMiddleware.addUser({
-      email: email,
-      mobile_number: mobile_number,
-      password: password,
-      roles: roles,
-      createdBy: createdBy,
-    });
-    if (response.success) {
-      res.status(response.code).json({
-        code: response.code,
-        success: response.success,
-        data: response.data,
-      });
-    } else {
-      res.status(response.code).json({
-        code: response.code,
-        success: response.success,
-        error: {
-          message: response.error.message,
-        },
-      });
+        let sessionUser = req.session.user;
+
+        if ( role === sessionUser.role) {
+            return ResponseHandler.send(res, {
+                success: false,
+                statusCode: 404,
+                message: `You are already ${role}.`, 
+            });
+        }
+
+        let allowedUserRole = [
+            UserRole.admin,
+            UserRole.superAdmin,
+            UserRole.tipperowner,
+            UserRole.truckdriver, 
+            UserRole.developer, 
+            UserRole.truckmanager, 
+            UserRole.contentWriter
+        ];
+
+        if (!allowedUserRole.includes(role)) {
+            return ResponseHandler.send(res, {
+                success: false, 
+                statusCode: 404,
+                message: `Invalid role type`, 
+            });
+        }
+
+        const userObj = await UserModel.findOneAndUpdate({ user_id: user_id }, { role: role, updated_at: new Date() }, { new: true });
+        if (!userObj) {
+            return ResponseHandler.send(res, {
+                success: false, 
+                statusCode: 404,
+                message: `Internal User ID`, 
+            });
+        }
+        return ResponseHandler.send(res, {
+            success: true, 
+            statusCode: 200,
+            message: `Success`,
+            data: {
+                user_id: userObj.user_id,
+                user_name: userObj.user_name,
+                email: userObj.email,
+                role: userObj.role,
+                created_at: userObj.created_at,
+                updated_at: userObj.updated_at,
+                deleted_at: userObj.deleted_at,
+            }
+        });
+
+       } catch (error) {
+        return ResponseHandler.send(res, {
+            success: false, 
+            statusCode: 500,
+            error: error.message,
+            message: `Internal Server Error`, 
+        });
+       }
     }
-  }
 
-  static async loginUser(req, res) {
-     const { user_id, password } = req.body;
-     if (user_id === undefined) {
-      res.status(204).json({
-        code: 204,
-        success: false,
-        error: {
-          message: `userid cannot be empty`
-        }
-      });
-     } else if(password === undefined) {
-      logger({ text: `Password: ${password}`})
-      res.status(204).json({
-        code: 204,
-        success: false,
-        error: {
-          message: `password cannot be empty`
-        }
-      });
-     } else {
-      let strUserID = user_id.split(` `).join(``);
-      let strPassword = password.split(` `).join(``);
-      var response = await UserMiddleware.loginMiddleware({ user_id: strUserID, password: strPassword });
-      if (response.success) {
-        res.status(response.code).json({
-          code: response.code,
-          success: response.success,
-          data: response.data,
-        });
-      } else {
-        res.status(response.code).json({
-          code: response.code,
-          success: response.success,
-          error: {
-            message: response.error.message
-          },
-        });
-      }  
-     }
-  }
+    static async verifyAndUpdateDL(req, res, next) {}
 
-  
-  static logout(req, res) {
-    const token = req.headers.authorization;
-    console.log(`${token}`);
-    if (token !== null || token !== undefined) {
-      logger({ text: token })
-      UserMiddleware.blackListToken({ token: token });
-      var response = UserMiddleware.isTokenBlackList({ token: token });
-      return res.status(response.code).json({
-        code: response.code,
-        success: response.success,
-        error: {
-          message: response.error.message,
-        }
-      });
-    } else {
-      return res.status().json({
-        error:  `Invalid token`
-      })
-    } 
-  }
+    static async verifyAndUpdateAadhar(req, res, next) {}
+
+    static async verifyAndUpdatePAN(req, res, next) {}
 }
 
 module.exports = UserController;
