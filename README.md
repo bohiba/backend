@@ -218,11 +218,6 @@ Truck Drivers are responsible for operating assigned trucks or tippers, ensuring
 - Attends training to improve operational and safety skills.
 - Plays a key role in maintaining the company’s reputation.
 
----
-
-## Conclusion
-
-Each role within the system has clearly defined responsibilities and permissions to ensure the platform operates smoothly. By adhering to these guidelines, the platform can maintain operational efficiency and consistency while protecting sensitive data and ensuring user accountability.
 -----
 ## License
 This project is licensed under the [MIT License](LICENSE).
