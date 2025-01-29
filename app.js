@@ -25,7 +25,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // for parsing multipart/form-data
 app.use(upload.array());
 
-app.use("/api/v1/", AuthRouter);
+app.use("/api/v1/auth/", AuthRouter);
 app.use("/api/v1/", MinesRouter);
 app.use(`/api/v1/`, UserRouter);
 

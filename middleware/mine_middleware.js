@@ -16,8 +16,7 @@ class MineMiddleware {
         return res.status(400).json({ 
             message: `Missing or empty required fields: ${missingOrEmptyFields.join(', ')}` 
         });
-    }
-    
+    }    
     next();
 }
 }

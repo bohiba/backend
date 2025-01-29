@@ -6,11 +6,29 @@ const AuthServices = require('../services/auth_services');
 require('dotenv').config();
 
 class AuthController {
+
+    /**
+     * - Signup is used for authentication of admin level user
+     * @param {*} user_name
+     * @param {*} email
+     * @param {*} mobile_number
+     * @param {*} dob
+     * @param {*} password
+     */
     static async signUp(req, res, next) {
         try {
-            const { user_name, email, mobile_number, password } = req.body;
+            const { user_name, name, email, mobile_number, dob, password } = req.body;
+            let signUpValidation = await AuthMiddleWare.signUpValidation({ key: req.body });
+
+            if (signUpValidation) {
+                return ResponseHandler.send(res, {
+                    success: false, 
+                    statusCode: 409,
+                    message: signUpValidation.message, 
+                });
+            }
+
             const existingUserEmail = await UserModel.findOne({ email });
-            const existingUserMobile = await UserModel.findOne({ mobile_number });
             if (existingUserEmail) {
                 return ResponseHandler.send(res, {
                     success: false, 
@@ -18,38 +36,26 @@ class AuthController {
                     message: `Email already exist.`, 
                     data: req.body
                 });
-            } else if(existingUserMobile){
+            }
+            
+            const existingUserMobile = await UserModel.findOne({ mobile_number });
+            if(existingUserMobile){
                 return ResponseHandler.send(res, {
                     success: false, 
                     statusCode: 409,
                     message: `Mobile number already exist.`, 
                     data: req.body
                 });
-            } else {
-                // Send email
-                const requiredSignUpFields = [ 'user_name', 'email', 'mobile_number', 'password' ];
-                const missingOrEmptyFields = requiredSignUpFields.filter(
-                    field => !req.body[field] || req.body[field].toString().trim() ===''
-                );
-                
-                if (missingOrEmptyFields.length > 0) {
-                    return ResponseHandler.send(res, {
-                        success: false,
-                        statusCode: 404,
-                        error: `Missing or empty required fields: ${missingOrEmptyFields.join(', ')}`, 
-                        message: `Failure`,
-                    });
-                } else {
-                    let emailRes = await AuthMiddleWare.signUpMiddleware( user_name, email, mobile_number, password )
-                    return ResponseHandler.send(res, { 
-                        success: emailRes.success, 
-                        statusCode: emailRes.statusCode,
-                        error: emailRes.error,
-                        message: emailRes.message,
-                        data: emailRes.data,
-                    });
-                }                
             }
+
+            let emailRes = await AuthMiddleWare.signUpMiddleware( user_name, name, email, mobile_number, dob, password )
+            return ResponseHandler.send(res, { 
+                success: emailRes.success, 
+                statusCode: emailRes.statusCode,
+                error: emailRes.error,
+                message: emailRes.message,
+                data: emailRes.data,
+            });
         } catch (error) {
             return ResponseHandler.send(res, {
                 success: false, 
@@ -60,49 +66,18 @@ class AuthController {
         }
     }
 
-    static async verifyOtp(req, res, next) {
-        try {        
-            const { otp } = req.body;
-            const userObj = await UserModel.findOne({ otp });
-            if(userObj.is_verified === true) {
-                return ResponseHandler.send(res, {
-                    success: true,
-                    statusCode: 200,
-                    message: "Verified user",
-                    data: userObj,
-                });
-            } else if (userObj.is_verified === false) {
-                userObj.is_verified = true;
-                const response = await AuthMiddleWare.verifyOtpMiddleware( userObj );
-                return ResponseHandler.send(res, {
-                    success: response.success,
-                    statusCode: response.statusCode,
-                    error: response.error,
-                    message: response.message,
-                    data: response.data
-                });
-            } else {
-                return ResponseHandler.send(res, {
-                    success: false,
-                    statusCode: 400, 
-                    message: "Invalid OTP. Re-try again.",
-                }); 
-            }
-        } catch (error) {
-            return ResponseHandler.send(res, {
-                success: false, 
-                error: error.message,
-                message: `Internal Server Error`, 
-                statusCode: 500
-            });
-        }
-    }
-
+    /**
+     * - Signin function is used to authenticate admin level user like
+     * - For now, It only support Super Admin and Admin authntication.
+     * - Next on validation success call dashboard API or complete authentication API.
+     * @param {*} user_id 
+     * @param {*} password 
+     */
     static async signIn(req, res, next) {
         try {
             const {user_id, password} = req.body;
+
             const userExist = await AuthMiddleWare.siginMiddleware({ userID: user_id});
-            
             if(!userExist) {
                 return ResponseHandler.send(res, {
                     success: false, 
@@ -110,6 +85,7 @@ class AuthController {
                     message: "Incorrect User ID.", 
                 });
             }
+
             const isMatch = await userExist.comparePassword(password);
             if( !isMatch){
                 return ResponseHandler.send(res, {
@@ -121,13 +97,15 @@ class AuthController {
             
             let tokenData = {_id: userExist._id, user_id: userExist.user_id}
             const token = await AuthMiddleWare.generateToken(tokenData, process.env.SECRET_KEY, '72h');
-
             req.session.user = {
                 user_id: userExist.user_id,
-                user_name: userExist.user_name,
+                name: userExist.name,
                 email: userExist.email,
                 mobile_number: userExist.mobile_number,
+                is_verified: userExist.is_verified,
+                dob: userExist.dob,
                 role: userExist.role,
+                status: userExist.status,
                 created_at: userExist.created_at,
                 updated_at: userExist.updated_at,
                 deleted_at: userExist.deleted_at,
@@ -150,6 +128,11 @@ class AuthController {
         }
     }
 
+    /**
+     * - Signin function is used to authenticate admin level user like
+     * - For now, It only support Super Admin and Admin authntication.
+     * @param {*} token
+     */
     static async logOut(req, res, next) {
         const token = req.headers["token"];
         if (token) {
@@ -163,6 +146,12 @@ class AuthController {
         });
     }
 
+    /**
+     * - Signin function is used to authenticate admin level user like
+     * - For now, It only support Super Admin and Admin authntication.
+     * - Next verifyOtp API
+     * @param {*} email
+     */
     static async forgotPassword(req, res, next) {
         try {
             const { email } = req.body;
@@ -211,6 +200,12 @@ class AuthController {
         }
     }
 
+    /**
+     * - Signin function is used to authenticate admin level user like
+     * - For now, It only support Super Admin and Admin authntication.
+     * - Next verifyOtp API
+     * @param {*} email
+     */
     static async resetPassword(req, res, next) {
         try {
             const { old_password, new_password} = req.body;
@@ -251,44 +246,45 @@ class AuthController {
         }
     }
 
-    static async getProfile(req, res, next) {
-        try {
-            const user = req.session.user;
-            if (!user) {
+     /**
+     * - Signin function is used to authenticate admin level user like
+     * - For now, It only support Super Admin and Admin authntication.
+     * @param {*} otp
+     */
+    static async verifyOtp(req, res, next) {
+        try {        
+            const { otp } = req.body;
+            const userObj = await UserModel.findOne({ otp });
+            if(userObj.is_verified === true) {
                 return ResponseHandler.send(res, {
-                    success: false, 
-                    statusCode: 401,
-                    message: "Unauthorised access. Invalid token.", 
+                    success: true,
+                    statusCode: 200,
+                    message: "Verified user",
+                    data: userObj,
+                });
+            } else if (userObj.is_verified === false) {
+                userObj.is_verified = true;
+                const response = await AuthMiddleWare.verifyOtpMiddleware( userObj );
+                return ResponseHandler.send(res, {
+                    success: response.success,
+                    statusCode: response.statusCode,
+                    error: response.error,
+                    message: response.message,
+                    data: response.data
                 });
             } else {
-                const userProfile = await UserModel.findOne({ user_id: user.user_id });
                 return ResponseHandler.send(res, {
-                    success: true, 
-                    statusCode: 200,
-                    message: "Success", 
-                    data: {
-                        user_id: userProfile.user_id,
-                        is_verified: userProfile.is_verified,
-                        user_name: userProfile.user_name,
-                        email: userProfile.email,
-                        mobile_number: userProfile.mobile_number,
-                        dob: userProfile.dob,
-                        role: userProfile.role,
-                        address: userProfile.address,
-                        document: userProfile.document,
-                        bank: userProfile.bank,
-                        created_at: userProfile.created_at,
-                        updated_at: userProfile.updated_at,
-                        deleted_at: userProfile.deleted_at,
-                    }
-                });
-            }    
+                    success: false,
+                    statusCode: 400, 
+                    message: "Invalid OTP. Re-try again.",
+                }); 
+            }
         } catch (error) {
             return ResponseHandler.send(res, {
                 success: false, 
-                statusCode: 500,
                 error: error.message,
                 message: `Internal Server Error`, 
+                statusCode: 500
             });
         }
     }

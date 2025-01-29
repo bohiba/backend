@@ -4,19 +4,36 @@ const AuthServices = require('../services/auth_services');
 const jwt = require('jsonwebtoken');
 
 class AuthMiddleware {
-    static async signUpMiddleware( user_name, email, mobile_number, password ) {
-        // let otp = await AuthServices.generateOTP();
+    static async signUpValidation({ key }) {
+        const requiredFields = [
+            `name`, `mobile_number`, `email`, `dob`, `password`
+        ];
+        
+        const missingOrEmptyFields = requiredFields.filter(
+            field => !key[field] || key[field].toString().trim() === ''
+        );
+        
+        if (missingOrEmptyFields.length > 0) {
+            return { 
+                message: `Missing or empty required fields: ${missingOrEmptyFields.join(', ')}` 
+            };
+        }
+    }
+
+    static async signUpMiddleware( user_name, name, email, mobile_number, dob, password ) {
         let uniqueID = await AuthServices.generateUniqueID({ length: 6 });
         let registerUser = UserModel({
             user_id: uniqueID,
+            name: name,
             email: email,
             user_name: user_name,
+            dob: dob,
             mobile_number: mobile_number,
             password: password
         });
-        let saveUser = await registerUser.save();
+        const saveUser = await registerUser.save();
         if (saveUser) {
-           let emailResponse = await AuthServices.sendEmail({
+           const emailResponse = await AuthServices.sendEmail({
             to: email,
             subject: 'Account Created Successfully',
             html: `
@@ -26,26 +43,26 @@ class AuthMiddleware {
                         <h1 style="font-size: 24px; margin: 0;">Welcome to Bohiba!</h1>
                         <p style="font-size: 18px; margin: 5px 0;">Your account has been successfully created.</p>
                     </div>
-                <div style="padding: 20px; text-align: center;">
-                    <p>Hi <strong>${saveUser.user_name || 'User'}</strong>,</p>
-                    <p>Congratulations! Your account with <strong>Bohiba</strong> has been successfully created. Below is your unique User ID:</p>
-                    <div style="text-align: center; margin: 20px 0;">
-                        <p style="font-size: 28px; font-weight: bold; color: #047BFC; background: #f0f8ff; border-radius: 8px; padding: 10px 20px; display: inline-block;">${saveUser.user_id}</p>
-                    </div>
-                    <p style="font-size: 14px; color: #555;">Keep this User ID safe as it will be required for logging in and accessing our services.</p>
-                    <p>If you have any questions or need assistance, feel free to contact our support team.</p>
-                    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                    <p>If you need assistance, please contact us at:</p>
-                    <p style="text-align: center;">
+                    <div style="padding: 20px; text-align: center;">
+                        <p>Hi <strong>${saveUser.name || 'User'}</strong>,</p>
+                        <p>Congratulations! Your account with <strong>Bohiba</strong> has been successfully created. Below is your unique User ID:</p>
+                        <div style="text-align: center; margin: 20px 0;">
+                            <p style="font-size: 28px; font-weight: bold; color: #047BFC; background: #f0f8ff; border-radius: 8px; padding: 10px 20px; display: inline-block;">${saveUser.user_id}</p>
+                        </div>
+                        <p style="font-size: 14px; color: #555;">Keep this User ID safe as it will be required for logging in and accessing our services.</p>
+                        <p>If you have any questions or need assistance, feel free to contact our support team.</p>
+                        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                        <p>If you need assistance, please contact us at:</p>
+                        <p style="text-align: center;">
                         <a href="mailto:support@bohiba.com" style="color: #047BFC; text-decoration: none; font-weight: bold;">support@bohiba.com</a>
-                    </p>
-                    <p style="text-align: center; font-size: 14px; color: #666;">Thank you for choosing <strong>Bohiba</strong>.</p>
-                </div>
+                        </p>
+                        <p style="text-align: center; font-size: 14px; color: #666;">Thank you for choosing <strong>Bohiba</strong>.</p>
+                    </div>
                 <div style="background-color: #f4f4f4; text-align: center; padding: 10px 20px; font-size: 14px; color: #999;">
                     <p style="margin: 0;">© ${new Date().getFullYear()} Bohiba. All rights reserved.</p>
                 </div>  
-                </div>
-            </body>`,});
+            </div>
+        </body>`,});
 
             return {
                 success: emailResponse.success,
@@ -54,10 +71,12 @@ class AuthMiddleware {
                 message: emailResponse.message,
                 data: {
                     user_id: saveUser.user_id,
+                    name: saveUser.name,
                     email: saveUser.email,
                     mobile_number: saveUser.mobile_number,
                     is_verified: saveUser.is_verified,
-                    otp: saveUser.otp,
+                    dob: saveUser.dob,
+                    status: saveUser.status,
                     password: saveUser.password,
                     created_at: saveUser.created_at,
                     updated_at: saveUser.updated_at,
@@ -79,16 +98,13 @@ class AuthMiddleware {
             let uniqueID = await AuthServices.generateUniqueID({ length: 6 });
             let formatUserObj = UserModel({
                 user_id: uniqueID,
+                name: user.name,
                 email: user.email,
                 is_verified: user.is_verified,
-                user_name: user.user_name,
                 mobile_number: user.mobile_number,
                 dob: user.dob,
-                otp: user.otp,
                 role: user.role,
-                document: user.document,
-                address: user.document,
-                bank: user.bank,
+                status: user.status,
                 created_at: user.created_at,
                 updated_at: user.updated_at,
                 deleted_at: user.delete_at
@@ -152,8 +168,8 @@ class AuthMiddleware {
                     });
                 }
                 req.userID = decoded.userID;
-                next();
             });
+            next();
         } catch (error) {
             return ResponseHandler.send(res, {
                 success: false,

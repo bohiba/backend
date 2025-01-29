@@ -5,53 +5,107 @@ const db = require('../config/db');
 const bcrypt = require('bcrypt');
 
 const mongoose = require('mongoose');
-const UserRole = require('../utils/roles');
+const UserRole = require('../utils/user_roles');
+const UserStatus = require(`../utils/user_status`);
 
 const { Schema } = mongoose;
 const userSchema = new Schema({
   user_id:{
     type: String,
+    unique: true,
     required: false, 
   },
-  email: {
-    type: String,
-    required: false, 
-  },
-  user_name: {
+  name: {
     type: String,
     require: false,
   },
+  email: {
+    type: String,
+    unique: true,
+    required: false, 
+  },
   mobile_number: {
     type: String,
+    unique: true,
     required: false,
-  },
-  dob: {
-    type: Date,
-    default: null,
   },
   is_verified : {
     type: Boolean,
     default: false,
     required: false,
   },
-  otp: {
+  dob: {
+    type: Date,
+    required: false,
+  },
+  role: {
     type: String,
-    require: false,
-    length: 6,
+    default: UserRole.tipperowner,  
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: [
+      UserStatus.active, 
+      UserStatus.inactive, 
+    ],
+    default: UserStatus.active,
+    required: false,
   },
   password: {
     type: String,
     require: false,
   },
-  role: {
-    type: String,
-    default: UserRole.tipperowner,
-    enum: [
-      UserRole.tipperowner,
-      UserRole.truckdriver,
-      UserRole.truckmanager,
-    ],   
+  created_at: {
+    type: Date,
+    default: Date.now,
     required: false,
+  },
+  updated_at: {
+    type: Date,
+    required: false,
+    default: Date.now,
+  },
+  deleted_at: {
+    type: Date,
+    required: false,
+    default: null,
+  }
+});
+
+userSchema.pre('save', async function() {
+  try {
+      var user = this;
+      const salt = await bcrypt.genSalt(10);
+      const hashPwd = await bcrypt.hash(user.password, salt);
+      user.password = hashPwd;
+  } catch (error) {
+      console.log(error)   
+  }
+});
+
+userSchema.methods.comparePassword = async function(userPassword) {
+  try {
+    const isMatch = await bcrypt.compare(userPassword, this.password);
+    return isMatch;
+  } catch (error) {
+    console.log(`Error while Comparing Password ${error}`);
+  }
+}
+
+const UserModel = db.model('users', userSchema);
+module.exports = UserModel;
+
+
+/**
+ * dob: {
+    type: Date,
+    default: null,
+  },
+  otp: {
+    type: String,
+    require: false,
+    length: 6,
   },
   document: {
     driving_liecense: {
@@ -160,42 +214,4 @@ const userSchema = new Schema({
       maxlength: 11,
     }
   }],
-  created_at: {
-    type: Date,
-    default: Date.now,
-    required: true,
-  },
-  updated_at: {
-    type: Date,
-    required: false,
-    default: null,
-  },
-  deleted_at: {
-    type: Date,
-    required: false,
-    default: null,
-  }
-});
-
-userSchema.pre('save', async function() {
-  try {
-      var user = this;
-      const salt = await bcrypt.genSalt(10);
-      const hashPwd = await bcrypt.hash(user.password, salt);
-      user.password = hashPwd;
-  } catch (error) {
-      console.log(error)   
-  }
-});
-
-userSchema.methods.comparePassword = async function(userPassword) {
-  try {
-    const isMatch = await bcrypt.compare(userPassword, this.password);
-    return isMatch;
-  } catch (error) {
-    console.log(`Error while Comparing Password ${error}`);
-  }
-}
-
-const UserModel = db.model('users', userSchema);
-module.exports = UserModel;
+ */

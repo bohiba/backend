@@ -71,6 +71,6 @@ class AuthServices {
     }
   }
 }
-  
-  module.exports = AuthServices;
+
+module.exports = AuthServices;
   

@@ -4,31 +4,6 @@ const ResponseHandler = require("../services/response_handler")
 const AuthServices = require("../services/auth_services")
 
 class MineController {
-  // Add a new mine
-  static async addMine(req, res) {
-    try {
-      const mineID = await AuthServices.generateUniqueID({ length: 10});
-      let mine = new MineModel({
-        mine_id: mineID,
-        ...req.body,
-      });
-      const savedMine = await mine.save();
-      return ResponseHandler.send(res, {
-        success: true,
-        statusCode: 201,
-        message: `Mines created successfully.`,
-        data: savedMine,
-      });
-    } catch (error) {
-      return ResponseHandler.send(res, {
-        success: false,
-        statusCode: 500,
-        error: error.message,
-        message: `Internal Server Error`,
-      });
-    }
-  }
-
   // Get all mines
   static async getMines(req, res) {
     try {
@@ -60,20 +35,44 @@ class MineController {
           message: `Mine not found. Invalid mine id.`,
           data: mine
         });
-      } else {
-        return ResponseHandler.send( res,{ 
-          success: true,
-          statusCode: 200,
-          message: `Successfull`,
-          data: mine
-        });
       }
+      return ResponseHandler.send( res,{ 
+        success: true,
+        statusCode: 200,
+        message: `Successfull`,
+        data: mine
+      });
     } catch (error) {
       return ResponseHandler.send(res, {
         success: false,
         statusCode: 500,
         error: error.message,
         message: `Internal server error`,
+      });
+    }
+  }
+
+  // Add a new mine
+  static async addMine(req, res) {
+    try {
+      const mineID = await AuthServices.generateUniqueID({ length: 10});
+      const mineObj = new MineModel({
+        mine_id: mineID,
+        ...req.body,
+      });
+      const savedMine = await mineObj.save();
+      return ResponseHandler.send(res, {
+        success: true,
+        statusCode: 201,
+        message: `Mines created successfully.`,
+        data: savedMine,
+      });
+    } catch (error) {
+      return ResponseHandler.send(res, {
+        success: false,
+        statusCode: 500,
+        error: error.message,
+        message: `Internal Server Error`,
       });
     }
   }
