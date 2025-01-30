@@ -1,5 +1,3 @@
-
-
-class DriverMiddleware {
+class VehicleMiddleware {
     
 }

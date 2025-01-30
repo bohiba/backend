@@ -1,7 +1,7 @@
 // Controller
 const MineModel = require("../models/mines_model");
 const ResponseHandler = require("../services/response_handler")
-const AuthServices = require("../services/auth_services")
+const { GlobalServices , IDType } = require("../services/global_serivces");
 
 class MineController {
   // Get all mines
@@ -55,7 +55,7 @@ class MineController {
   // Add a new mine
   static async addMine(req, res) {
     try {
-      const mineID = await AuthServices.generateUniqueID({ length: 10});
+      const mineID = await GlobalServices.generateUniqueID({ type: IDType.MINES_ID });
       const mineObj = new MineModel({
         mine_id: mineID,
         ...req.body,

@@ -1,6 +1,6 @@
 const UserModel = require('../models/user_model');
 const ResponseHandler = require('../services/response_handler');
-const AuthServices = require('../services/auth_services');
+const { GlobalServices, IDType } = require('../services/global_serivces');
 const jwt = require('jsonwebtoken');
 
 class AuthMiddleware {
@@ -21,7 +21,7 @@ class AuthMiddleware {
     }
 
     static async signUpMiddleware( user_name, name, email, mobile_number, dob, password ) {
-        let uniqueID = await AuthServices.generateUniqueID({ length: 6 });
+        let uniqueID = await GlobalServices.generateUniqueID({ type: IDType.ALL_USER });
         let registerUser = UserModel({
             user_id: uniqueID,
             name: name,
@@ -95,7 +95,7 @@ class AuthMiddleware {
 
     static async verifyOtpMiddleware( user ) {
         try {
-            let uniqueID = await AuthServices.generateUniqueID({ length: 6 });
+            let uniqueID = await GlobalServices.generateUniqueID({ type: IDType.OTP });
             let formatUserObj = UserModel({
                 user_id: uniqueID,
                 name: user.name,
@@ -159,7 +159,7 @@ class AuthMiddleware {
             });
         }
         try {
-            jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+            jwt.verify(token, process.env.SECRET_KEY, (err, user) => {
                 if (err) {
                     return ResponseHandler.send(res ,{
                         success: false,
@@ -167,7 +167,7 @@ class AuthMiddleware {
                         message: "Failed to authenticate token"
                     });
                 }
-                req.userID = decoded.userID;
+                req.user = user;
             });
             next();
         } catch (error) {

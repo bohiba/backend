@@ -1,6 +1,7 @@
 const UserModel = require("../models/user_model");
 const ResponseHandler = require("../services/response_handler");
 const AuthServices = require('../services/auth_services');
+const { GlobalServices , IDType } = require("../services/global_serivces");
 
 class UserMiddleware {
     static async validateAddUserData(req, res, next) {
@@ -21,7 +22,7 @@ class UserMiddleware {
     }
 
     static async addUserMiddleware( name, email, mobile_number, role, dob ) {
-        let uniqueID = await AuthServices.generateUniqueID({ length: 6 });
+        let uniqueID = await GlobalServices.generateUniqueID({ type: IDType.ALL_USER });
         let addUserModel = UserModel({
             user_id: uniqueID,
             name: name,

@@ -1,5 +1,6 @@
 
 const VehicleModel = require(`../models/vehicle_model`);
+const { GlobalServices, IDType } = require("../services/global_serivces");
 const ResponseHandler = require(`../services/response_handler`);
 
 class VehicleController {
@@ -57,6 +58,19 @@ class VehicleController {
       try {
         const { user_id, added_by, vehicle_no, engine_no, chassis_no } = req.body;
         // Make a api request
+        const vehicle_id = GlobalServices.generateUniqueID({ type: IDType.VEHICLE_ID });
+        if (!user_id || !vehicle_no || !engine_no || !chassis_no) {
+          return ResponseHandler.send(res, {
+            success: false,
+            statusCode: 400,
+            error: `User ID and Vehicle ID are required.`,
+            message: 'Failure',
+          });
+        }
+        // Make an API request
+
+
+
         // Verify the success response with engine_no, chassis_no and vehcile_no with engineNo, chassisNo and registrationNumber respectively. if matched store the data as per VehicleModel
       } catch (error) {
         return ResponseHandler.send(res, {

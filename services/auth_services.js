@@ -8,7 +8,7 @@ class AuthServices {
 
   }
 
-  static async generateUniqueID({ length }) {
+  /*static async generateUniqueID({ length }) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let uniqueID;
     let isUnique = false;
@@ -35,7 +35,7 @@ class AuthServices {
       isUnique = !existingUserID; // If no match, it's unique
     } while (!isUnique);
     return otp;
-  }
+  }*/
 
   static async sendEmail({ to, subject, html }) {
     const transporter = NodeMailer.createTransport({

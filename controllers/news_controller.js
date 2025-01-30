@@ -1,6 +1,7 @@
 const ResponseHandler = require(`../services/response_handler`);
 const NewsModel = require(`../models/news_model`);
 const AuthServices = require("../services/auth_services");
+const { GlobalServices, IDType } = require("../services/global_serivces");
 
 class NewsController {
     static async gettAllNews(req, res, next) {
@@ -53,7 +54,7 @@ class NewsController {
     static async addNews(req, res, next) {
         try {
             // const {user_id, image, title, subtitle, body } = req.body;
-            const newsID = AuthServices.generateUniqueID({ length: 10 });
+            const newsID = GlobalServices.generateUniqueID({ type: IDType.NEWS_ID });
             const newsObj = new NewsModel({
                 newsID,
                 ...req.body,

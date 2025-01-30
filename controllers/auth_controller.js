@@ -2,7 +2,6 @@ const AuthMiddleWare = require('../middleware/auth_middleware');
 const UserModel = require('../models/user_model');
 const ResponseHandler = require('../services/response_handler');
 const AuthServices = require('../services/auth_services');
-
 require('dotenv').config();
 
 class AuthController {
@@ -33,8 +32,10 @@ class AuthController {
                 return ResponseHandler.send(res, {
                     success: false, 
                     statusCode: 409,
-                    message: `Email already exist.`, 
-                    data: req.body
+                    message: `Failure`, 
+                    data: {
+                        message: `Email already Exist`
+                    }
                 });
             }
             
@@ -43,8 +44,10 @@ class AuthController {
                 return ResponseHandler.send(res, {
                     success: false, 
                     statusCode: 409,
-                    message: `Mobile number already exist.`, 
-                    data: req.body
+                    message: `Failure`, 
+                    data: {
+                        message: `Mobile number already exist.`
+                    }
                 });
             }
 
@@ -96,7 +99,7 @@ class AuthController {
             } 
             
             let tokenData = {_id: userExist._id, user_id: userExist.user_id}
-            const token = await AuthMiddleWare.generateToken(tokenData, process.env.SECRET_KEY, '72h');
+            const token = await AuthMiddleWare.generateToken(tokenData, process.env.SECRET_KEY, '1m');
             req.session.user = {
                 user_id: userExist.user_id,
                 name: userExist.name,
@@ -116,7 +119,19 @@ class AuthController {
                 statusCode: 200,
                 message: "Success", 
                 token: token,
-                data: req.session.user
+                data: {
+                    user_id: userExist.user_id,
+                    name: userExist.name,
+                    email: userExist.email,
+                    mobile_number: userExist.mobile_number,
+                    is_verified: userExist.is_verified,
+                    dob: userExist.dob,
+                    role: userExist.role,
+                    status: userExist.status,
+                    created_at: userExist.created_at,
+                    updated_at: userExist.updated_at,
+                    deleted_at: userExist.deleted_at,
+                }
             });
         } catch (error) {
             return ResponseHandler.send(res, {
@@ -136,13 +151,23 @@ class AuthController {
     static async logOut(req, res, next) {
         const token = req.headers["token"];
         if (token) {
-            TokenBlacklist.add({ token });
-            req.session.destroy();
+            // TokenBlacklist.add({ token });
+            req.session.destroy((error)=> {
+                if (error) ResponseHandler.send(res, {
+                    success: false,
+                    statusCode: 500,
+                    error: `Failed to logged out.`,
+                    message: "Failed",
+                });
+            });
         }
+
+        res.clearCookie(`connect.sid`, { path: "/" });
         return  ResponseHandler.send(res, {
             success: true, 
             statusCode: 200,
             message: "User signed out successfully", 
+            
         });
     }
 
