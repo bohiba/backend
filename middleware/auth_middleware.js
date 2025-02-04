@@ -1,7 +1,9 @@
+const jwt = require('jsonwebtoken');
+const AuthServices = require(`../services/auth_services`);
 const UserModel = require('../models/user_model');
 const ResponseHandler = require('../services/response_handler');
 const { GlobalServices, IDType } = require('../services/global_serivces');
-const jwt = require('jsonwebtoken');
+
 
 class AuthMiddleware {
     static async signUpValidation({ key }) {

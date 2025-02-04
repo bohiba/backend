@@ -2,8 +2,33 @@ const UserModel = require("../models/user_model");
 const ResponseHandler = require("../services/response_handler");
 const AuthServices = require('../services/auth_services');
 const { GlobalServices , IDType } = require("../services/global_serivces");
+const UserRole = require("../utils/user_roles");
 
 class UserMiddleware {
+    static async validateGetAllUsers({ keys }) {
+        const requiredFields = [
+            `user_role`,
+        ];
+        const missingOrEmptyFields = requiredFields.filter(
+            field => !keys[field] || keys[field].toString().trim() === ''
+        );
+
+        if (missingOrEmptyFields.length > 0) {
+            return {
+                message: `Missing or empty required fields: ${missingOrEmptyFields.join(', ')}` 
+            };
+        }
+        
+        const { user_role } = keys;
+        // const userObj = await UserModel.findOne({ user_id: user_id });
+        if (user_role !== UserRole.admin || user_role !== UserRole.superAdmin) {
+            return {
+                message: `Unauthorised user.`
+            }
+        }
+        return;
+    }
+
     static async validateAddUserData(req, res, next) {
         const requirefield = [email, mobile_number, role];
         const missingOrEmptyFields = requirefield.filter(

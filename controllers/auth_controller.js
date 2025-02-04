@@ -7,7 +7,7 @@ require('dotenv').config();
 class AuthController {
 
     /**
-     * - Signup is used for authentication of admin level user
+     * - This function is not for this admin-side
      * @param {*} user_name
      * @param {*} email
      * @param {*} mobile_number
@@ -99,7 +99,7 @@ class AuthController {
             } 
             
             let tokenData = {_id: userExist._id, user_id: userExist.user_id}
-            const token = await AuthMiddleWare.generateToken(tokenData, process.env.SECRET_KEY, '1m');
+            const token = await AuthMiddleWare.generateToken(tokenData, process.env.SECRET_KEY, '1h');
             req.session.user = {
                 user_id: userExist.user_id,
                 name: userExist.name,

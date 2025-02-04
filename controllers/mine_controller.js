@@ -7,7 +7,7 @@ class MineController {
   // Get all mines
   static async getMines(req, res) {
     try {
-      const mines = await MineModel.find();
+      const mines = await MineModel.find().select(`-_id -__v`).lean();
       return ResponseHandler.send(res, {
         success: true,
         statusCode: 200,

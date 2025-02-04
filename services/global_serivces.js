@@ -14,6 +14,7 @@ class GlobalServices {
       case IDType.TIPPER_DRIVER:
       case IDType.TIPPER_MANAGER:
       case IDType.MINES_ID:
+      case IDType.ALL_USER:
         characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         length = type === IDType.MINES_ID ? 10 : 6;
         break;

@@ -3,11 +3,11 @@ const axios = require(`axios`);
 const axios = require("axios");
 
 class ApiService {
-  static baseURL = "https://vehicle-information-india.p.rapidapi.com";
-  static headers = {
-    "X-RapidAPI-Key": "57d19e2aa2mshe46efe4ca88d9d2p189fa5jsn465ca88e94a2",
-    "X-RapidAPI-Host": "vehicle-information-india.p.rapidapi.com",
-  };
+  // static baseURL = "https://vehicle-information-india.p.rapidapi.com";
+  // static headers = {
+  //   "X-RapidAPI-Key": "57d19e2aa2mshe46efe4ca88d9d2p189fa5jsn465ca88e94a2",
+  //   "X-RapidAPI-Host": "vehicle-information-india.p.rapidapi.com",
+  // };
 
   // Generic API request handler
   static async request({ method, url, headers = {}, body = {}, params = {} }) {
