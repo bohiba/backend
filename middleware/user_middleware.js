@@ -21,9 +21,9 @@ class UserMiddleware {
         
         const { user_role } = keys;
         // const userObj = await UserModel.findOne({ user_id: user_id });
-        if (user_role !== UserRole.admin || user_role !== UserRole.superAdmin) {
+        if (user_role !== UserRole.admin && user_role !== UserRole.superAdmin) {
             return {
-                message: `Unauthorised user.`
+                message: `Unauthorised user`
             }
         }
         return;
